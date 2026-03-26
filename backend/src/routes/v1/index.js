@@ -1,22 +1,20 @@
 const express = require('express');
-const authRoute = require('./auth.route');
-const userRoute = require('./user.route');
+const authRoutes = require('../../modules/auth/auth.routes');
+const userRoutes = require('../../modules/user/user.routes');
+const studyRoutes = require('../../modules/study/study.routes');
+const quizRoutes = require('../../modules/quiz/quiz.routes');
+const examRoutes = require('../../modules/exam/exam.routes');
+const analyticsRoutes = require('../../modules/analytics/analytics.routes');
+const subjectsRouter = require('./subjects.route');
 
 const router = express.Router();
 
-const defaultRoutes = [
-  {
-    path: '/auth',
-    route: authRoute,
-  },
-  {
-    path: '/users',
-    route: userRoute,
-  },
-];
-
-defaultRoutes.forEach((route) => {
-  router.use(route.path, route.route);
-});
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/subjects', subjectsRouter);
+router.use('/study', studyRoutes);
+router.use('/quiz', quizRoutes);
+router.use('/exam', examRoutes);
+router.use('/analytics', analyticsRoutes);
 
 module.exports = router;

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(find c:/projects/fullstack/EduApp/backend -type f -not -path */node_modules/*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \":*)",
+      "Bash(npx prisma:*)"
+    ]
+  }
+}

@@ -1,50 +1,73 @@
-const httpStatus = require('http-status');
-const bcrypt = require('bcryptjs');
 const asyncHandler = require('../../utils/asyncHandler');
-const { userService, emailService, tokenService } = require('../../services');
-const ApiError = require('../../utils/apiError');
+const authService = require('./auth.service');
 
 const register = asyncHandler(async (req, res) => {
-  const user = await userService.createUser(req.body);
-  
-  // Send verification email
-  try {
-    await emailService.sendVerificationEmail(user.email, user.verificationToken);
-  } catch (error) {
-    console.error('Failed to send verification email:', error);
-  }
-
-  // Remove sensitive fields from response
-  delete user.verificationToken;
-
-  res.status(httpStatus.status.CREATED).send({
-    message: 'User registered successfully. Please check your email to verify your account.',
+  const user = await authService.register(req.body);
+  res.status(201).json({
+    message: 'Account created. Please check your email to verify.',
     user,
   });
 });
 
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  const user = await userService.getUserByEmail(email);
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    throw new ApiError(httpStatus.status.UNAUTHORIZED, 'Incorrect email or password');
-  }
-  
-  const tokens = await tokenService.generateAuthTokens(user);
-  res.send({ user, tokens });
+  const { user, accessToken, refreshToken } = await authService.login(req.body);
+
+  // Set refresh token in httpOnly cookie
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  res.json({ user, accessToken });
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
-  const { token } = req.body;
+  await authService.verifyEmail(req.body.token);
+  res.json({ message: 'Email verified successfully' });
+});
+
+const refresh = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refreshToken;
   if (!token) {
-    throw new ApiError(httpStatus.status.BAD_REQUEST, 'Verification token is required');
+    return res.status(401).json({ message: 'No refresh token' });
   }
-  await userService.verifyUserEmail(token);
-  res.send({ message: 'Email verified successfully! You can now log in.' });
+
+  const { accessToken, refreshToken } = await authService.refreshTokens(token);
+
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.json({ accessToken });
+});
+
+const logout = asyncHandler(async (req, res) => {
+  await authService.logout(req.user.id);
+  res.clearCookie('refreshToken');
+  res.json({ message: 'Logged out successfully' });
+});
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  await authService.forgotPassword(req.body.email);
+  res.json({ message: 'If the email exists, a reset link has been sent' });
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  await authService.resetPassword(req.body.token, req.body.password);
+  res.json({ message: 'Password reset successfully' });
 });
 
 module.exports = {
   register,
   login,
   verifyEmail,
+  refresh,
+  logout,
+  forgotPassword,
+  resetPassword,
 };

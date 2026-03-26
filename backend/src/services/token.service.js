@@ -1,62 +1,85 @@
 const jwt = require('jsonwebtoken');
-const moment = require('moment');
 const config = require('../config/env');
-const { userService } = require('./index');
+const prisma = require('../config/prisma');
+const { redisClient } = require('../config/redis');
+const { REDIS_KEYS } = require('../utils/constants');
 
-/**
- * Generate token
- * @param {string} userId
- * @param {Moment} expires
- * @param {string} secret
- * @returns {string}
- */
-const generateToken = (userId, expires, secret = config.jwt.accessSecret) => {
-  const payload = {
-    sub: userId,
-    iat: moment().unix(),
-    exp: expires.unix(),
-  };
-  return jwt.sign(payload, secret);
+const generateToken = (payload, secret, expiresIn) => {
+  return jwt.sign(payload, secret, { expiresIn });
 };
 
-/**
- * Save a token (if we had a token model, for Refresh Tokens)
- * For now, we'll just return the tokens.
- */
-
-/**
- * Verify token and return user
- * @param {string} token
- * @param {string} secret
- * @returns {Promise<User>}
- */
-const verifyToken = async (token, secret = config.jwt.accessSecret) => {
-  const payload = jwt.verify(token, secret);
-  return userService.getUserById(payload.sub);
+const verifyToken = (token, secret) => {
+  return jwt.verify(token, secret);
 };
 
-/**
- * Generate auth tokens
- * @param {User} user
- * @returns {Promise<Object>}
- */
 const generateAuthTokens = async (user) => {
-  const accessTokenExpires = moment().add(parseInt(config.jwt.accessExpiration), 'minutes');
-  const accessToken = generateToken(user.id, accessTokenExpires, config.jwt.accessSecret);
+  const accessToken = generateToken(
+    { userId: user.id, email: user.email, type: 'access' },
+    config.jwt.accessSecret,
+    config.jwt.accessExpiration
+  );
 
-  // For 1.0, we just return the access token. 
-  // Refresh tokens can be added later with a Token model.
-  
-  return {
-    access: {
-      token: accessToken,
-      expires: accessTokenExpires.toDate(),
-    },
-  };
+  const refreshToken = generateToken(
+    { userId: user.id, type: 'refresh' },
+    config.jwt.refreshSecret,
+    config.jwt.refreshExpiration
+  );
+
+  // Store refresh token in DB
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { refreshToken },
+  });
+
+  return { accessToken, refreshToken };
+};
+
+const refreshAuthTokens = async (refreshToken) => {
+  const payload = verifyToken(refreshToken, config.jwt.refreshSecret);
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+  });
+
+  if (!user || user.refreshToken !== refreshToken) {
+    throw new Error('Invalid refresh token');
+  }
+
+  // Check if blacklisted
+  const isBlacklisted = await redisClient.get(REDIS_KEYS.BLACKLIST(refreshToken));
+  if (isBlacklisted) {
+    throw new Error('Token has been revoked');
+  }
+
+  // Rotate: blacklist old, generate new
+  await blacklistToken(refreshToken);
+  return generateAuthTokens(user);
+};
+
+const blacklistToken = async (token) => {
+  try {
+    await redisClient.set(REDIS_KEYS.BLACKLIST(token), '1', { EX: 7 * 24 * 60 * 60 });
+  } catch {
+    // Redis might not be connected - continue
+  }
+};
+
+const revokeRefreshToken = async (userId) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.refreshToken) {
+    await blacklistToken(user.refreshToken);
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { refreshToken: null },
+  });
 };
 
 module.exports = {
   generateToken,
   verifyToken,
   generateAuthTokens,
+  refreshAuthTokens,
+  blacklistToken,
+  revokeRefreshToken,
 };

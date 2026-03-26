@@ -2,6 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const config = require('./config/env');
 const errorHandler = require('./middleware/errorHandler');
 const ApiError = require('./utils/apiError');
@@ -18,6 +19,9 @@ app.use(express.json());
 // Parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
 
+// Parse cookies
+app.use(cookieParser());
+
 // CORS configuration
 app.use(cors({
   origin: config.env === 'production' ? config.frontendUrl : ['http://localhost:3000', 'http://127.0.0.1:3000'],
@@ -26,29 +30,28 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 
-// Default morgan logger
+// Request logging
 if (config.env !== 'test') {
   app.use(morgan('dev'));
 }
 
+// API routes
 const routes = require('./routes/v1');
-
-// v1 api routes
 app.use('/api', routes);
 
-// test route
+// Health check
 app.get('/health', (req, res) => res.send('OK'));
 
-// send back a 404 error for any unknown api request
+// 404 handler
 app.use((req, res, next) => {
   next(new ApiError(404, 'Not found'));
 });
 
-// convert error to ApiError, if needed
+// Global error handler
 app.use(errorHandler);
 
 const server = app.listen(config.port, async () => {
-  console.log(`Listening to port ${config.port}`);
+  console.log(`Server listening on port ${config.port}`);
   await connectRedis();
 });
 
@@ -73,7 +76,5 @@ process.on('unhandledRejection', unexpectedErrorHandler);
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM received');
-  if (server) {
-    server.close();
-  }
+  if (server) server.close();
 });
