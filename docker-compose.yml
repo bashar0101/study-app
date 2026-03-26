@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: studyai_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 20142007
+      MYSQL_DATABASE: studyai
+    ports:
+      - "3307:3306"
+    volumes:
+      - studyai_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: studyai_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - studyai_redis_data:/data
+
+volumes:
+  studyai_mysql_data:
+  studyai_redis_data:

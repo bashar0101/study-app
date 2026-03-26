@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  name              String
+  avatarUrl         String?
+  isEmailVerified   Boolean   @default(false)
+  verificationToken String?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  refreshToken      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sessions          StudySession[]
+  analytics         UserAnalytics[]
+
+  @@map("users")
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?  // emoji or icon name
+  parentId    String?
+  parent      Subject? @relation("SubjectTree", fields: [parentId], references: [id])
+  children    Subject[] @relation("SubjectTree")
+  topics      Topic[]
+  createdAt   DateTime @default(now())
+
+  @@map("subjects")
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  createdAt   DateTime @default(now())
+
+  questions   Question[]
+
+  @@unique([subjectId, slug])
+  @@map("topics")
+}
+
+model StudySession {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode         SessionMode   // STUDY, QUIZ, EXAM
+  status       SessionStatus @default(IN_PROGRESS)
+  subjectId    String?
+  subjectName  String        // denormalized for quick reads
+  topicName    String?
+  difficulty   Difficulty    @default(MEDIUM)
+  totalQuestions Int         @default(0)
+  correctAnswers Int         @default(0)
+  score        Float?        // percentage score (0-100)
+  timeLimitMin Int?          // exam time limit in minutes
+  startedAt    DateTime      @default(now())
+  completedAt  DateTime?
+  createdAt    DateTime      @default(now())
+
+  questions    Question[]
+
+  @@index([userId, mode])
+  @@index([userId, createdAt])
+  @@map("study_sessions")
+}
+
+model Question {
+  id              String      @id @default(cuid())
+  sessionId       String
+  session         StudySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  topicId         String?
+  topic           Topic?      @relation(fields: [topicId], references: [id])
+  questionNumber  Int
+  type            QuestionType // MCQ, TRUE_FALSE, SHORT_ANSWER, ESSAY
+  difficulty      Difficulty
+  questionText    String @db.Text
+  options         Json?       // for MCQ: ["option1", "option2", "option3", "option4"]
+  correctAnswer   String @db.Text      // the correct answer text
+  explanation     String? @db.Text     // AI-generated explanation
+  userAnswer      String? @db.Text
+  isCorrect       Boolean?
+  aiEvaluation    Json?       // { score: 0-100, feedback: "...", strengths: [], improvements: [] }
+  answeredAt      DateTime?
+  timeSpentSec    Int?        // seconds spent on this question
+  createdAt       DateTime    @default(now())
+
+  @@index([sessionId, questionNumber])
+  @@map("questions")
+}
+
+model UserAnalytics {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  subjectName     String
+  mode            SessionMode
+  sessionsCount   Int      @default(0)
+  questionsCount  Int      @default(0)
+  correctCount    Int      @default(0)
+  avgScore        Float    @default(0)
+  avgTimePerQ     Float?   // average seconds per question
+  streak          Int      @default(0) // consecutive days studied
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, date, subjectName, mode])
+  @@index([userId, date])
+  @@map("user_analytics")
+}
+
+enum SessionMode {
+  STUDY
+  QUIZ
+  EXAM
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
