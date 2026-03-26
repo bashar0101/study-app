@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import useAuthStore from "@/store/authStore";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
 import { ROUTES } from "@/constants/routes";
 
 export default function DashboardPage() {

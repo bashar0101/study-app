@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import useStudyStore from "@/store/studyStore";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Spinner } from "@/components/ui/Spinner";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Spinner from "@/components/ui/Spinner";
 import SubjectSelector from "@/components/study/SubjectSelector";
 import DifficultySelector from "@/components/study/DifficultySelector";
 import QuestionCard from "@/components/study/QuestionCard";

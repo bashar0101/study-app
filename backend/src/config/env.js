@@ -20,7 +20,7 @@ const envVarsSchema = z.object({
   SMTP_PORT: z.coerce.number().describe('port to connect to the email server'),
   SMTP_USER: z.string().describe('username for email server'),
   SMTP_PASS: z.string().describe('password for email server'),
-  EMAIL_FROM: z.string().describe('the from field in the emails sent by the app'),
+  EMAIL_FROM: z.string().default('StudyAI <noreply@studyai.app>').describe('the from field in the emails sent by the app'),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   REDIS_TOKEN_PREFIX: z.string().default('studyai:')
 });

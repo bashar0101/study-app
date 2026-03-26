@@ -10,9 +10,9 @@ import {
   Clock
 } from "lucide-react";
 import useStudyStore from "@/store/studyStore";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Spinner } from "@/components/ui/Spinner";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Spinner from "@/components/ui/Spinner";
 import QuizConfig from "@/components/quiz/QuizConfig";
 import QuizQuestion from "@/components/quiz/QuizQuestion";
 import QuizProgress from "@/components/quiz/QuizProgress";

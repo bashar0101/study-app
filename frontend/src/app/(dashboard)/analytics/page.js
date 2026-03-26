@@ -10,8 +10,8 @@ import {
   Filter
 } from "lucide-react";
 import api from "@/lib/api";
-import { Card } from "@/components/ui/Card";
-import { Spinner } from "@/components/ui/Spinner";
+import Card from "@/components/ui/Card";
+import Spinner from "@/components/ui/Spinner";
 import ScoreChart from "@/components/analytics/ScoreChart";
 import SubjectBreakdown from "@/components/analytics/SubjectBreakdown";
 import ProgressTimeline from "@/components/analytics/ProgressTimeline";

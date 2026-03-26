@@ -11,9 +11,9 @@ import {
   AlertCircle
 } from "lucide-react";
 import useStudyStore from "@/store/studyStore";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Spinner } from "@/components/ui/Spinner";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Spinner from "@/components/ui/Spinner";
 import ExamConfig from "@/components/exam/ExamConfig";
 import ExamQuestion from "@/components/exam/ExamQuestion";
 import ExamNavigation from "@/components/exam/ExamNavigation";

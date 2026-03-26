@@ -12,8 +12,8 @@ import {
   Check
 } from "lucide-react";
 import useAuthStore from "@/store/authStore";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import toast from "react-hot-toast";
 

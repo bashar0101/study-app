@@ -7,7 +7,7 @@ import Topbar from "@/components/layout/Topbar";
 import MobileNav from "@/components/layout/MobileNav";
 import useAuthStore from "@/store/authStore";
 import { ROUTES, AUTH_ROUTES } from "@/constants/routes";
-import { Spinner } from "@/components/ui/Spinner";
+import { FullPageSpinner } from "@/components/ui/Spinner";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -29,11 +29,7 @@ export default function DashboardLayout({ children }) {
   }, [loading, isAuthenticated, router]);
 
   if (loading || !isAuthenticated) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-50">
-        <Spinner size="lg" text="Authenticating..." />
-      </div>
-    );
+    return <FullPageSpinner />;
   }
 
   return (
