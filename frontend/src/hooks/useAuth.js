@@ -7,11 +7,11 @@ import { ROUTES } from "@/constants/routes";
 
 export default function useAuth({ requireAuth = false, redirectTo } = {}) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, fetchUser } = useAuthStore();
+  const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore();
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     if (isLoading) return;

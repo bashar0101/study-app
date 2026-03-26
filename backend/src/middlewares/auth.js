@@ -21,7 +21,7 @@ const auth = asyncHandler(async (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, config.jwt.accessSecret);
-    const user = await userService.getUserById(payload.sub);
+    const user = await userService.getUserById(payload.userId || payload.sub);
     if (!user) {
       throw new ApiError(401, 'User not found');
     }
