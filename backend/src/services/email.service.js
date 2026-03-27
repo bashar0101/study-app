@@ -1,14 +1,21 @@
 const nodemailer = require('nodemailer');
 const config = require('../config/env');
 
-const transport = nodemailer.createTransport(config.email.smtp);
+const smtpConfigured = !!(config.email.smtp.host && config.email.smtp.auth.user);
 
-/* istanbul ignore next */
-if (config.env !== 'test') {
-  transport
-    .verify()
-    .then(() => console.log('Connected to email server'))
-    .catch(() => console.error('Unable to connect to email server. Check smtp settings in .env'));
+let transport = null;
+if (smtpConfigured) {
+  transport = nodemailer.createTransport(config.email.smtp);
+
+  /* istanbul ignore next */
+  if (config.env !== 'test') {
+    transport
+      .verify()
+      .then(() => console.log('Connected to email server'))
+      .catch(() => console.error('Unable to connect to email server. Check smtp settings in .env'));
+  }
+} else {
+  console.log('[Email] SMTP not configured — emails will be logged to console instead');
 }
 
 /**
@@ -20,6 +27,10 @@ if (config.env !== 'test') {
  * @returns {Promise}
  */
 const sendEmail = async (to, subject, text, html) => {
+  if (!transport) {
+    console.log(`[Email Mock] To: ${to} | Subject: ${subject}\n${text}`);
+    return;
+  }
   const msg = { from: config.email.from, to, subject, text, html };
   await transport.sendMail(msg);
 };

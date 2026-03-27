@@ -3,7 +3,7 @@ const { z } = require('zod');
 const startQuiz = z.object({
   body: z.object({
     subjectId: z.string().min(1),
-    topicId: z.string().optional(),
+    topicId: z.string().nullable().optional(),
     difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).default('MEDIUM'),
     questionCount: z.coerce.number().int().min(5).max(20).default(10),
   }),

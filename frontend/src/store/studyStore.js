@@ -104,7 +104,12 @@ const useStudyStore = create((set, get) => ({
     return data;
   },
 
-  submitQuiz: async (sessionId, answers) => {
+  submitQuiz: async (sessionId, answersMap) => {
+    // Convert {questionId: answer} object to [{questionId, answer}] array
+    const answers = Object.entries(answersMap).map(([questionId, answer]) => ({
+      questionId,
+      answer,
+    }));
     const data = await api.post(`/quiz/${sessionId}/submit`, { answers });
     set({ currentSession: data.session || data });
     return data;
@@ -151,7 +156,12 @@ const useStudyStore = create((set, get) => ({
     return data;
   },
 
-  submitExam: async (sessionId, answers) => {
+  submitExam: async (sessionId, answersMap) => {
+    // Convert {questionId: answer} object to [{questionId, answer}] array
+    const answers = Object.entries(answersMap).map(([questionId, answer]) => ({
+      questionId,
+      answer,
+    }));
     const data = await api.post(`/exam/${sessionId}/submit`, { answers });
     set({ currentSession: data.session || data });
     return data;
